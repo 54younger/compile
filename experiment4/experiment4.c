@@ -18,27 +18,27 @@ char *representation[] = {
     "(E)", // F
     "i"    // F
 };
-char *TokenTypeString[] =
-    {
-        // 关键字0-11
-        "void", "int", "float", "double", "char", "if", "else", "for", "do", "while", "return", "ID",
-        // 单字符分界符12-27
-        "+", "-", "*", "/", "=", "<", ">", "!", "(", ")", "{", "}", "[", "]", ";", "\n",
-        // 双字符分界符28-44
-        "==", "!=", "<=", ">=", "&&", "||", "++", "--", "+=", "-=", "*=", "/=", "()", "[]", "{}", "//", "/*"
-        // 数字45
-        ,
-        "num"};
+char *TokenTypeString[] = {
+    // 关键字0-11
+    "void", "int", "float", "double", "char", "if", "else", "for", "do", "while", "return", "ID",
+    // 单字符分界符12-27
+    "+", "-", "*", "/", "=", "<", ">", "!", "(", ")", "{", "}", "[", "]", ";", "\n",
+    // 双字符分界符28-44
+    "==", "!=", "<=", ">=", "&&", "||", "++", "--", "+=", "-=", "*=", "/=", "()", "[]", "{}", "//", "/*"
+    // 数字45
+    ,
+    "num"};
 char NONTERMINA_NOTE_EXT[] = {'E', 'E', 'E', 'T', 'T', 'T', 'F', 'F'};
 char NONTERMINA_NOTE[] = {'E', 'T', 'F'};
 char TERMINA_NOTE[] = {'+', '-', '*', '/', '(', ')', 'i', '#'};
 int firstvt[NUM_OF_NONTERMINA][NUM_OF_TERMINA] = {0};
 int lastvt[NUM_OF_NONTERMINA][NUM_OF_TERMINA] = {0};
-int table[NUM_OF_TERMINA + 1][NUM_OF_TERMINA] = {0};
+int table[NUM_OF_TERMINA][NUM_OF_TERMINA] = {0};
 int top;                 // 栈顶指针
 char stack[30] = {'\0'}; // 分析栈
 char *stack_bottom;      // 指向栈底
 char *now;               // 指向当前输入符号
+
 int sum(int *arr, int n)
 {
   int sum = 0;
@@ -48,7 +48,8 @@ int sum(int *arr, int n)
   }
   return sum;
 }
-int GetNontermina(char c)
+
+int GetNontermina(char c) // 获取非终结符的下标
 {
   if (c == 'E')
     return 0;
@@ -59,7 +60,7 @@ int GetNontermina(char c)
   else
     return -1;
 }
-int GetTermina(char c)
+int GetTermina(char c) // 获取终结符的下标
 {
   if (c == '+')
     return 0;
@@ -80,6 +81,7 @@ int GetTermina(char c)
   else
     return -1;
 }
+
 void GetFirstvt(char nonterminal)
 {
   for (int i = 0; i < NUM_OF_NONTERMINA_EXT; i++)
@@ -108,31 +110,6 @@ void GetFirstvt(char nonterminal)
     }
   }
 }
-void CreateFirstvt()
-{
-  for (int i = 0; i < NUM_OF_NONTERMINA; i++)
-  {
-    if (sum(firstvt[i], NUM_OF_TERMINA) == 0)
-    {
-      GetFirstvt(NONTERMINA_NOTE_EXT[i]);
-    }
-  }
-  // print Firstvt
-  printf("Firstvt:\n");
-  for (int i = 0; i < NUM_OF_NONTERMINA; i++)
-  {
-    printf("%c| ", NONTERMINA_NOTE[i]);
-    for (int j = 0; j < NUM_OF_TERMINA; j++)
-    {
-      if (firstvt[i][j] == 1)
-      {
-        printf(" %c |", TERMINA_NOTE[j]);
-      }
-    }
-    printf("\n");
-  }
-}
-
 void GetLastvt(char nontermina)
 {
   for (int i = 0; i < NUM_OF_NONTERMINA_EXT; i++)
@@ -162,7 +139,7 @@ void GetLastvt(char nontermina)
   }
 }
 
-void CreateLastvt()
+void CreateLastvt() // 创建Lastvt集
 {
   for (int i = 0; i < NUM_OF_NONTERMINA; i++)
   {
@@ -179,6 +156,30 @@ void CreateLastvt()
     for (int j = 0; j < NUM_OF_TERMINA; j++)
     {
       if (lastvt[i][j] == 1)
+      {
+        printf(" %c |", TERMINA_NOTE[j]);
+      }
+    }
+    printf("\n");
+  }
+}
+void CreateFirstvt() // 创建Firstvt集
+{
+  for (int i = 0; i < NUM_OF_NONTERMINA; i++)
+  {
+    if (sum(firstvt[i], NUM_OF_TERMINA) == 0)
+    {
+      GetFirstvt(NONTERMINA_NOTE_EXT[i]);
+    }
+  }
+  // print Firstvt
+  printf("Firstvt:\n");
+  for (int i = 0; i < NUM_OF_NONTERMINA; i++)
+  {
+    printf("%c| ", NONTERMINA_NOTE[i]);
+    for (int j = 0; j < NUM_OF_TERMINA; j++)
+    {
+      if (firstvt[i][j] == 1)
       {
         printf(" %c |", TERMINA_NOTE[j]);
       }
@@ -268,15 +269,14 @@ void GetTable()
   }
 }
 // 出错判断
-  //判断是否为运算符
-bool  isOperator(char c)
+bool isOperator(char c) // 判断是否为运算符
 {
-  if (c == '+' || c == '-' || c == '*' || c == '/' )
+  if (c == '+' || c == '-' || c == '*' || c == '/')
     return true;
   else
     return false;
 }
-int whyWrong(char *p, int k, char *psc)
+int whyWrong(char *p, int k, char *psc) // 判断表达式是否合法，并给出非法理由
 {
   if (k == 1 && p[k] == '#' && isOperator(*psc))
   {
@@ -289,7 +289,7 @@ int whyWrong(char *p, int k, char *psc)
     printf("\n运算符号不能相邻!\n");
     return 0;
   }
-  if (*psc == '#' && isOperator(*(psc-1)))
+  if (*psc == '#' && isOperator(*(psc - 1)))
   {
     printf("\n运算符后面没有操作数!\n");
     return 0;
@@ -297,7 +297,7 @@ int whyWrong(char *p, int k, char *psc)
   return 1;
 }
 
-int search_table(int a, int b)
+int search_table(int a, int b) // 查表，将<,>,=转换为1,-1,0
 {
   if (table[a][b] == '<')
   {
@@ -317,86 +317,7 @@ int search_table(int a, int b)
   }
 }
 
-/* 根据table判断函数输入字符串是否符合文法
- */
-int AnalyzeString(char in_c[])
-{
-  int j;
-  char q;
-  int flag;
-  int n = 1;
-  top = 1;
-  stack[top] = '#';
-  stack[top + 1] = '\0';    // 初始化
-  stack_bottom = stack + 1; // 指向栈底
-  now = in_c;
-  printf("\n步骤\t栈内字符\t\t优先关系\t当前符号\t剩余输入串\t\t\t移进或归约\n");
-  while (1)
-  {
-    if (whyWrong(stack, top, now) == 0)
-    {
-      printf("\nwrong\n");
-      break;
-    }
-    if (GetTermina(stack[top]) != -1)
-      j = top;
-    else
-      j = top - 1;
-    flag = search_table(GetTermina(stack[j]), GetTermina(*now));
-    if (flag == 1)
-    { // 如果stack[j] > 当前输入字符
-      do
-      {
-        q = stack[j];
-        if (GetTermina(stack[j - 1]) != -1)
-          j--;
-        else
-          j = j - 2;
-      } while (search_table(GetTermina(stack[j]), GetTermina(q)) != -1);
-      printf("(%d)\t%-24s>\t\t%c\t\t%-32s归约\n", n++, stack_bottom, *now, now + 1);
-      top = j + 1;
-      stack[top] = 'N';
-      stack[top + 1] = '\0';
-      continue;
-    }
-    else if (flag == -1)
-    {
-      printf("(%d)\t%-24s<\t\t%c\t\t", n++, stack_bottom, *now);
-      top++;
-      stack[top] = *now;
-      stack[top + 1] = '\0';
-      now++;
-      printf("%-32s移进\n", now);
-      continue;
-    }
-    else if (flag == 0)
-    {
-      if (stack[j] == '#')
-      {
-        printf("(%d)\t%-24s=\t\t#\t\t\t\t\t\t接受\n", n, stack_bottom);
-        printf("\nsuccess!\n");
-        break;
-      }
-      else
-      {
-        printf("(%d)\t%-24s=\t\t%c\t\t", n++, stack_bottom, *now);
-        top++;
-        stack[top] = *now;
-        stack[top + 1] = '\0';
-        now++;
-        printf("%-32s移进\n", now);
-        continue;
-      }
-    }
-    else
-    {
-      printf("(%d)\t%-24s无\t\t%c\t\t%-32s\\\n", n++, stack_bottom, *now, now + 1);
-      printf("\nwrong!\n");
-      break;
-    }
-  }
-}
-char *change_format(FILE *fp)
+char *change_format(FILE *fp) // 将二元式转换为一般形式
 {
   int num_out[MAX_LENGTH];
   static char output[MAX_LENGTH];
@@ -447,6 +368,82 @@ char *change_format(FILE *fp)
   return output;
 }
 
+// 根据table判断函数输入字符串是否符合文法
+int AnalyzeString(char in_c[])
+{
+  int j;
+  char q;
+  int flag;
+  int n = 1;
+  top = 1;
+  stack[top] = '#';
+  stack[top + 1] = '\0';    // 初始化
+  stack_bottom = stack + 1; // 指向栈底
+  now = in_c;
+  printf("\n");
+  while (1)
+  {
+    if (whyWrong(stack, top, now) == 0)
+    {
+      printf("\nwrong\n");
+      break;
+    }
+    if (GetTermina(stack[top]) != -1)
+      j = top;
+    else
+      j = top - 1;
+    flag = search_table(GetTermina(stack[j]), GetTermina(*now));
+    if (flag == 1)
+    { // 如果stack[j] > 当前输入字符
+      do
+      {
+        q = stack[j];
+        if (GetTermina(stack[j - 1]) != -1)
+          j--;
+        else
+          j = j - 2;
+      } while (search_table(GetTermina(stack[j]), GetTermina(q)) != -1);
+      printf("当前进行第%d步，当前分析符号为%c，算符优先表中关系为>，进行归约操作，剩余输入串为%s\n", n++, *now, now + 1);
+      top = j + 1;
+      stack[top] = 'N';
+      stack[top + 1] = '\0';
+      continue;
+    }
+    else if (flag == -1)
+    {
+      printf("当前进行第%d步，当前分析符号为%c，算符优先表中关系为<，进行移进操作，剩余输入串为%s\n", n++, *now, now + 1);
+      top++;
+      stack[top] = *now;
+      stack[top + 1] = '\0';
+      now++;
+      continue;
+    }
+    else if (flag == 0)
+    {
+      if (stack[j] == '#')
+      {
+        printf("当前进行第%d步，当前分析符号为#，算符优先表中关系为=，进行接受操作\n", n);
+        printf("\nsuccess!\n");
+        break;
+      }
+      else
+      {
+        printf("当前进行第%d步，当前分析符号为%c，算符优先表中关系为=，进行移进操作，剩余输入串为%s\n", n++, *now, now + 1);
+        top++;
+        stack[top] = *now;
+        stack[top + 1] = '\0';
+        now++;
+        continue;
+      }
+    }
+    else
+    {
+      printf("当前进行第%d步，当前分析符号为%c，算符优先表中关系为空，进行错误操作，剩余输入串为%s\n", n++, *now, now + 1);
+      printf("\nwrong!\n");
+      break;
+    }
+  }
+}
 int main()
 {
   CreateFirstvt();
