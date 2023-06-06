@@ -5,7 +5,7 @@
 #include <ctype.h>
 
 #define MAX_SYMBOLS 100
-#define MAX_STATES 1000
+#define MAX_STATES 100
 
 char grammar_ext[MAX_SYMBOLS][MAX_SYMBOLS] = {'\0'};
 char grammar[MAX_SYMBOLS][MAX_SYMBOLS] = {'\0'};
@@ -43,13 +43,13 @@ int if_state_exit(state_stack *state, int num_states)
   {
     if ((temp + i)->num_state_product == state->num_state_product)
     {
-      for (int i = 0; i < temp->num_state_product; i++)
+      for (int j = 0; j < (temp+i)->num_state_product; j++)
       {
-        if (strcmp((temp + i)->state_product[i], state->state_product[i]) != 0)
+        if(strcmp((temp+i)->state_product[j], state->state_product[j]) != 0)
         {
           break;
         }
-        if (i == (temp + i)->num_state_product - 1)
+        if(j == (temp+i)->num_state_product - 1)
         {
           return i;
         }
@@ -97,7 +97,7 @@ void inilaize_state_stack()
   int move = 0;
   int new_position = 1;
   int i = 1;
-  for (i = 1; (States_I + i)->num_state_product != -1; i++)
+  for (i = 1; i<=new_position; i++)
   {
     // new_position += move;
     move = 0;
@@ -116,6 +116,28 @@ void inilaize_state_stack()
           // 将该产生式的位置向后移动一位
           (States_I + new_position)->position[(States_I + new_position)->num_state_product] = (States_I + i - 1)->position[k] + 1;
           (States_I + new_position)->num_state_product++;
+        }
+        else if((States_I + i - 1)->state_product[k][(States_I + i - 1)->position[k]] == '\0')
+        {
+          if((States_I + i - 1)->state_product[k][0] == grammar[0][0])
+          {action[i-1][num_terminals] = 'a';}
+          else
+          {
+            //置入follow集
+            for(int l = 0; l < num_non_terminals; l++)
+            {
+              if((States_I + i - 1)->state_product[k][0] == non_terminals[l])
+              {
+                for(int m = 0; m < num_terminals; m++)
+                {
+                  if(follow[l][m] == 1)
+                  {
+                    action[i-1][m] = 'r'+k;
+                  }
+                }
+              }
+            }
+          }
         }
       }
       if (flag)
@@ -210,11 +232,9 @@ void inilaize_state_stack()
           printf("%s ", (States_I + goto_table[i - 1][j])->state_product[k]);
           printf("position: ");
           printf("%d \n", (States_I + goto_table[i - 1][j])->position[k]);
-
         }
-printf("\n\n");
+        printf("\n\n");
       }
-
     }
     num_states = i;
   }
@@ -367,7 +387,19 @@ void print_action()
     printf("%4d|", i);
     for (int j = 0; j < num_terminals + 1; j++)
     {
-      printf("%4d|", action[i][j]);
+      if(action[i][j]>='r')
+      {
+        printf("r%3d|", action[i][j]-'r');
+      }
+      else if(action[i][j]=='a')
+      {
+        printf(" acc|");
+      }
+      else
+      {
+        printf("%4d|", action[i][j]);
+      }
+
     }
     printf("\n");
   }
